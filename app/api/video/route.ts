@@ -1,5 +1,10 @@
 import Replicate from 'replicate';
 
+type ReplicateOutput =
+  | string
+  | string[]
+  | { [key: string]: any };
+
 export async function POST(req: Request) {
   try {
     const { prompt } = await req.json();
@@ -15,7 +20,7 @@ export async function POST(req: Request) {
       auth: process.env.REPLICATE_API_TOKEN!,
     });
 
-    const output = await replicate.run(
+    const output: ReplicateOutput = await replicate.run(
       'sunfjun/stable-video-diffusion:d68b6e09eedbac7a49e3d8644999d93579c386a083768235cabca88796d70d82',
       {
         input: {
@@ -26,29 +31,41 @@ export async function POST(req: Request) {
       }
     );
 
-    // Replicate returns a URL or array depending on model
-    const video =
-      typeof output === 'string'
-        ? output
-        : Array.isArray(output)
-        ? output[0]
-        : output?.url;
+    // Normalize output to a single URL
+    let video: string | null = null;
 
-    if (!video) {
-      throw new Error('No video returned');
+    if (typeof output === 'string') {
+      video = output;
+    } else if (Array.isArray(output)) {
+      video = output[0];
+    } else if (output && typeof output === 'object') {
+      // Some Replicate models return { output: [...] }
+      if (Array.isArray(output.output)) {
+        video = output.output[0];
+      }
     }
 
-    return new Response(JSON.stringify({ video }), {
-      status: 200,
-      headers: { 'Content-Type': 'application/json' },
-    });
+    if (!video) {
+      throw new Error('No video returned from model');
+    }
+
+    return new Response(
+      JSON.stringify({ video }),
+      {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      }
+    );
   } catch (err: any) {
     return new Response(
-      JSON.stringify({ error: err.message || 'Generation failed' }),
+      JSON.stringify({
+        error: err?.message || 'Video generation failed',
+      }),
       { status: 500 }
     );
   }
 }
+
 
 
 

@@ -1,5 +1,3 @@
-export const runtime = 'edge';
-
 import Replicate from 'replicate';
 
 export async function POST(req: Request) {
@@ -18,29 +16,40 @@ export async function POST(req: Request) {
     });
 
     const output = await replicate.run(
-      "genmoai/mochi-1:1944af04d098ef69bed7f9d335d102e652203f268ec4aaa2d836f6217217e460",
+      'sunfjun/stable-video-diffusion:d68b6e09eedbac7a49e3d8644999d93579c386a083768235cabca88796d70d82',
       {
         input: {
           prompt,
-          num_frames: 121,
-          fps: 24,
-          guidance_scale: 5.5,
+          num_frames: 24,
+          fps: 8,
         },
       }
     );
 
-    return new Response(
-      JSON.stringify({ video: output }),
-      { status: 200 }
-    );
+    // Replicate returns a URL or array depending on model
+    const video =
+      typeof output === 'string'
+        ? output
+        : Array.isArray(output)
+        ? output[0]
+        : output?.url;
+
+    if (!video) {
+      throw new Error('No video returned');
+    }
+
+    return new Response(JSON.stringify({ video }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    });
   } catch (err: any) {
-    console.error(err);
     return new Response(
-      JSON.stringify({ error: err.message }),
+      JSON.stringify({ error: err.message || 'Generation failed' }),
       { status: 500 }
     );
   }
 }
+
 
 
 

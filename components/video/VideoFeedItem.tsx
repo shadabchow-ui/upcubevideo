@@ -1,12 +1,22 @@
-'use client'
+'use client';
 
-import { useRef } from 'react'
+import { useRef } from 'react';
 
-export default function VideoFeedItem({ src, title, author }) {
-  const ref = useRef<HTMLVideoElement>(null)
+type VideoFeedItemProps = {
+  src: string;
+  title: string;
+  author: string;
+};
+
+export default function VideoFeedItem({
+  src,
+  title,
+  author,
+}: VideoFeedItemProps) {
+  const ref = useRef<HTMLVideoElement | null>(null);
 
   return (
-    <div className="relative h-[90vh] w-full overflow-hidden rounded-2xl">
+    <div className="relative h-[90vh] w-full overflow-hidden rounded-2xl bg-black">
       <video
         ref={ref}
         src={src}
@@ -17,21 +27,26 @@ export default function VideoFeedItem({ src, title, author }) {
         className="h-full w-full object-cover"
       />
 
-      {/* Bottom gradient */}
+      {/* Bottom fade */}
       <div className="absolute inset-x-0 bottom-0 h-48 bg-gradient-to-t from-black/80 to-transparent" />
 
-      {/* Text overlay */}
+      {/* Creator */}
+      <div className="absolute top-4 left-4 text-sm text-white/80">
+        @{author}
+      </div>
+
+      {/* Title */}
       <div className="absolute bottom-6 left-6 max-w-md">
-        <p className="text-sm text-zinc-400">@{author}</p>
-        <p className="text-base text-white mt-1">{title}</p>
+        <p className="text-white text-base leading-snug">{title}</p>
       </div>
 
       {/* Right actions */}
-      <div className="absolute bottom-24 right-6 flex flex-col gap-4 text-white">
-        <button className="opacity-70 hover:opacity-100">♥</button>
-        <button className="opacity-70 hover:opacity-100">↻</button>
-        <button className="opacity-70 hover:opacity-100">⋯</button>
+      <div className="absolute right-4 bottom-24 flex flex-col gap-3 text-white/80">
+        <button>♥</button>
+        <button>↻</button>
+        <button>⋯</button>
       </div>
     </div>
-  )
+  );
 }
+

@@ -1,98 +1,132 @@
-// app/page.tsx
+// app/explore/page.tsx
 "use client";
 
+import Link from "next/link";
 import { useMemo, useState } from "react";
 
-type JobStatus = "Queued" | "Running" | "Done" | "Failed";
-
-type Job = {
+type ExploreItem = {
   id: string;
+  title?: string;
   prompt: string;
-  createdAt: string;
-  status: JobStatus;
+  creator: string;
+  likes: number;
+  views: number;
+  age: string;
+  // placeholder-only for now
+  kind: "video" | "image";
 };
 
-export default function HomePage() {
-  const [prompt, setPrompt] = useState("");
-  const [useStoryboard, setUseStoryboard] = useState(false);
-  const [jobs, setJobs] = useState<Job[]>([
-    {
-      id: "job_001",
-      prompt: "A cinematic drone shot over a neon city at night, rain, reflections…",
-      createdAt: "Just now",
-      status: "Done",
-    },
-    {
-      id: "job_002",
-      prompt: "A playful polar bear wearing a tuxedo sitting in a theater…",
-      createdAt: "2m ago",
-      status: "Running",
-    },
-    {
-      id: "job_003",
-      prompt: "A small fox in fresh snow, soft morning light, shallow depth…",
-      createdAt: "7m ago",
-      status: "Queued",
-    },
-  ]);
+const SEED: ExploreItem[] = [
+  {
+    id: "ex_001",
+    title: "Neon rain city",
+    prompt:
+      "Cinematic drone shot over a neon city at night, rain reflections, slow push-in, moody atmosphere, high detail.",
+    creator: "sirremixalot",
+    likes: 5400,
+    views: 175000,
+    age: "2h",
+    kind: "video",
+  },
+  {
+    id: "ex_002",
+    title: "Ice bridge mouse",
+    prompt:
+      "Tiny mouse sliding across glossy ice under a long bridge, cold blue light, shallow depth of field, smooth motion.",
+    creator: "camet",
+    likes: 6200,
+    views: 168000,
+    age: "5h",
+    kind: "video",
+  },
+  {
+    id: "ex_003",
+    title: "Snow fox portrait",
+    prompt:
+      "A fluffy arctic fox perched on a snowy post, soft morning fog, gentle wind, realistic fur detail, calm framing.",
+    creator: "rorotuck",
+    likes: 6400,
+    views: 947000,
+    age: "1d",
+    kind: "video",
+  },
+  {
+    id: "ex_004",
+    title: "Studio close-up",
+    prompt:
+      "High-end studio close-up of a luxury watch rotating on a turntable, dramatic rim light, crisp reflections, macro lens.",
+    creator: "glassframe",
+    likes: 2100,
+    views: 91000,
+    age: "3d",
+    kind: "video",
+  },
+  {
+    id: "ex_005",
+    title: "Retro street",
+    prompt:
+      "1990s handheld street footage in Times Square, busy crowd, authentic motion blur, film grain, nostalgic color grade.",
+    creator: "vhs_era",
+    likes: 890,
+    views: 38000,
+    age: "6d",
+    kind: "video",
+  },
+  {
+    id: "ex_006",
+    title: "Polar bear tux",
+    prompt:
+      "A polar bear wearing a tuxedo sitting in a theater audience, subtle head turn, warm spotlight bokeh, comedic realism.",
+    creator: "cinebear",
+    likes: 1300,
+    views: 52000,
+    age: "1w",
+    kind: "video",
+  },
+];
 
-  const canGenerate = useMemo(() => prompt.trim().length >= 5, [prompt]);
+type Tab = "Trending" | "New" | "Following";
 
-  async function onGenerate() {
-    if (!canGenerate) return;
+export default function ExplorePage() {
+  const [tab, setTab] = useState<Tab>("Trending");
+  const [q, setQ] = useState("");
 
-    // UI-first: immediately create a job card
-    const newJob: Job = {
-      id: `job_${Math.random().toString(16).slice(2)}`,
-      prompt: prompt.trim(),
-      createdAt: "Now",
-      status: "Queued",
-    };
-    setJobs((prev) => [newJob, ...prev]);
-    setPrompt("");
+  const items = useMemo(() => {
+    const base = [...SEED];
 
-    // Call your API
-    try {
-      setJobs((prev) =>
-        prev.map((j) => (j.id === newJob.id ? { ...j, status: "Running" } : j))
-      );
+    // lightweight tab behavior (you'll replace with real data later)
+    if (tab === "New") base.reverse();
+    if (tab === "Following") base.sort((a, b) => a.creator.localeCompare(b.creator));
 
-      const res = await fetch("/api/video", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ prompt: newJob.prompt }),
-      });
+    const query = q.trim().toLowerCase();
+    if (!query) return base;
 
-      if (!res.ok) throw new Error("Request failed");
-      // const data = await res.json(); // later: store video url/output
-
-      setJobs((prev) =>
-        prev.map((j) => (j.id === newJob.id ? { ...j, status: "Done" } : j))
-      );
-    } catch {
-      setJobs((prev) =>
-        prev.map((j) => (j.id === newJob.id ? { ...j, status: "Failed" } : j))
-      );
-    }
-  }
+    return base.filter((it) => {
+      const hay = `${it.title ?? ""} ${it.prompt} ${it.creator}`.toLowerCase();
+      return hay.includes(query);
+    });
+  }, [tab, q]);
 
   return (
     <div className="min-h-screen bg-black text-white">
       {/* Top bar */}
-      <header className="sticky top-0 z-20 border-b border-white/10 bg-black/60 backdrop-blur">
+      <header className="sticky top-0 z-30 border-b border-white/10 bg-black/60 backdrop-blur">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3">
           <div className="flex items-center gap-3">
             <div className="h-8 w-8 rounded-xl bg-white/10" />
             <div className="leading-tight">
               <div className="text-sm font-semibold tracking-tight">Upcube Video</div>
-              <div className="text-xs text-white/60">Generate short clips from text</div>
+              <div className="text-xs text-white/60">Explore generations</div>
             </div>
           </div>
 
           <div className="flex items-center gap-3">
-            <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-white/70">
-              Runtime: Edge + node compat
-            </span>
+            <Link
+              href="/"
+              className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white/80 hover:bg-white/10"
+            >
+              Create
+            </Link>
             <button className="rounded-xl bg-white px-4 py-2 text-sm font-semibold text-black hover:bg-white/90">
               New
             </button>
@@ -100,167 +134,153 @@ export default function HomePage() {
         </div>
       </header>
 
-      {/* 3-column layout */}
-      <main className="mx-auto grid max-w-7xl grid-cols-12 gap-4 px-4 py-6">
-        {/* Left rail */}
-        <aside className="col-span-12 md:col-span-2">
-          <nav className="space-y-2 rounded-2xl border border-white/10 bg-white/5 p-3">
-            <NavItem active label="Create" />
-            <NavItem label="Explore" />
-            <NavItem label="History" />
-            <NavItem label="Settings" />
-          </nav>
-
-          <div className="mt-4 rounded-2xl border border-white/10 bg-white/5 p-3">
-            <div className="text-xs font-semibold text-white/70">Tips</div>
-            <div className="mt-2 text-xs text-white/60">
-              Keep prompts concrete: subject, motion, camera, lighting, style.
-            </div>
+      <main className="mx-auto max-w-7xl px-4 py-6">
+        {/* Controls */}
+        <div className="mb-5 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <div className="flex items-center gap-2">
+            <TabButton active={tab === "Trending"} onClick={() => setTab("Trending")}>
+              Trending
+            </TabButton>
+            <TabButton active={tab === "New"} onClick={() => setTab("New")}>
+              New
+            </TabButton>
+            <TabButton active={tab === "Following"} onClick={() => setTab("Following")}>
+              Following
+            </TabButton>
           </div>
-        </aside>
 
-        {/* Center canvas */}
-        <section className="col-span-12 md:col-span-7">
-          <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <div className="text-lg font-semibold tracking-tight">Describe your video</div>
-                <div className="mt-1 text-sm text-white/60">
-                  Write a prompt. Optional storyboard will split into shots later.
-                </div>
-              </div>
-
-              <label className="flex cursor-pointer items-center gap-2 rounded-xl border border-white/10 bg-black/40 px-3 py-2 text-sm">
-                <input
-                  type="checkbox"
-                  className="h-4 w-4 accent-white"
-                  checked={useStoryboard}
-                  onChange={(e) => setUseStoryboard(e.target.checked)}
-                />
-                Storyboard
-              </label>
-            </div>
-
-            <div className="mt-4">
-              <textarea
-                value={prompt}
-                onChange={(e) => setPrompt(e.target.value)}
-                placeholder="A cinematic handheld shot of a boxer wrapping hands in a gritty gym, dust in the air, warm tungsten light..."
-                className="min-h-[140px] w-full resize-none rounded-2xl border border-white/10 bg-black/40 p-4 text-sm text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-white/20"
+          <div className="flex w-full items-center gap-2 md:w-[420px]">
+            <div className="flex w-full items-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-3 py-2">
+              <span className="text-xs text-white/40">Search</span>
+              <input
+                value={q}
+                onChange={(e) => setQ(e.target.value)}
+                placeholder="prompt, creator, style..."
+                className="w-full bg-transparent text-sm text-white placeholder:text-white/35 focus:outline-none"
               />
             </div>
-
-            <div className="mt-4 flex items-center justify-between gap-3">
-              <div className="text-xs text-white/50">
-                {canGenerate ? "Ready to generate" : "Type at least 5 characters"}
-              </div>
-              <button
-                onClick={onGenerate}
-                disabled={!canGenerate}
-                className="rounded-2xl bg-white px-5 py-3 text-sm font-semibold text-black disabled:cursor-not-allowed disabled:opacity-40 hover:bg-white/90"
-              >
-                Generate
-              </button>
-            </div>
+            <button
+              onClick={() => setQ("")}
+              className="rounded-2xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white/70 hover:bg-white/10"
+            >
+              Clear
+            </button>
           </div>
+        </div>
 
-          {/* Output preview placeholder */}
-          <div className="mt-4 rounded-2xl border border-white/10 bg-white/5 p-4">
-            <div className="text-sm font-semibold">Preview</div>
-            <div className="mt-3 grid aspect-video place-items-center rounded-2xl border border-dashed border-white/15 bg-black/40 text-sm text-white/50">
-              Your video preview will appear here
-            </div>
-          </div>
-        </section>
-
-        {/* Right panel */}
-        <aside className="col-span-12 md:col-span-3">
-          <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-            <div className="flex items-center justify-between">
-              <div className="text-sm font-semibold">Your generations</div>
-              <button
-                onClick={() => setJobs([])}
-                className="text-xs text-white/50 hover:text-white/80"
-              >
-                Clear
-              </button>
-            </div>
-
-            <div className="mt-3 space-y-3">
-              {jobs.map((job) => (
-                <div
-                  key={job.id}
-                  className="rounded-2xl border border-white/10 bg-black/40 p-3 hover:border-white/20"
-                >
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-xs text-white/50">{job.createdAt}</span>
-                    <StatusPill status={job.status} />
-                  </div>
-                  <div className="mt-2 line-clamp-2 text-sm text-white/80">{job.prompt}</div>
-                  <div className="mt-3 grid aspect-video place-items-center rounded-xl border border-white/10 bg-black/50 text-xs text-white/40">
-                    thumbnail
-                  </div>
-                </div>
-              ))}
-              {jobs.length === 0 && (
-                <div className="rounded-2xl border border-white/10 bg-black/40 p-4 text-sm text-white/50">
-                  No generations yet.
-                </div>
-              )}
-            </div>
-          </div>
-
-          <div className="mt-4 rounded-2xl border border-white/10 bg-white/5 p-4">
-            <div className="text-sm font-semibold">Quick settings</div>
-            <div className="mt-3 space-y-3 text-sm text-white/70">
-              <Row label="Frames" value="24" />
-              <Row label="FPS" value="8" />
-              <Row label="Guidance" value="7.5" />
-            </div>
-          </div>
-        </aside>
+        {/* Feed (Sora-like: columns) */}
+        <div className="columns-1 gap-4 sm:columns-2 lg:columns-3">
+          {items.map((it) => (
+            <ExploreTile key={it.id} item={it} />
+          ))}
+        </div>
       </main>
     </div>
   );
 }
 
-function NavItem({ label, active }: { label: string; active?: boolean }) {
+function TabButton({
+  active,
+  children,
+  onClick,
+}: {
+  active?: boolean;
+  children: React.ReactNode;
+  onClick: () => void;
+}) {
   return (
     <button
+      onClick={onClick}
       className={[
-        "w-full rounded-xl px-3 py-2 text-left text-sm transition",
+        "rounded-2xl px-4 py-2 text-sm transition",
         active
           ? "border border-white/15 bg-white/10 text-white"
-          : "text-white/70 hover:bg-white/10 hover:text-white",
+          : "border border-white/10 bg-white/5 text-white/70 hover:bg-white/10 hover:text-white",
       ].join(" ")}
     >
-      {label}
+      {children}
     </button>
   );
 }
 
-function StatusPill({ status }: { status: JobStatus }) {
-  const cls =
-    status === "Done"
-      ? "border-white/15 bg-white/10 text-white"
-      : status === "Running"
-      ? "border-white/15 bg-white/5 text-white/80"
-      : status === "Queued"
-      ? "border-white/10 bg-black/30 text-white/70"
-      : "border-white/15 bg-black/30 text-white/70";
-
+function ExploreTile({ item }: { item: ExploreItem }) {
   return (
-    <span className={`rounded-full border px-2 py-1 text-[11px] ${cls}`}>
-      {status}
-    </span>
+    <article className="mb-4 break-inside-avoid">
+      <div className="group overflow-hidden rounded-2xl border border-white/10 bg-white/5 hover:border-white/20">
+        {/* Media placeholder */}
+        <div className="relative aspect-[9/16] w-full bg-black/40">
+          {/* Fake “video” look */}
+          <div className="absolute inset-0 bg-gradient-to-b from-white/10 via-transparent to-black/70" />
+          <div className="absolute inset-0 opacity-0 transition group-hover:opacity-100">
+            <div className="absolute inset-0 bg-white/5" />
+          </div>
+
+          {/* Top-left creator */}
+          <div className="absolute left-3 top-3 flex items-center gap-2">
+            <div className="h-7 w-7 rounded-full bg-white/10" />
+            <div className="text-xs text-white/85">@{item.creator}</div>
+          </div>
+
+          {/* Bottom prompt + stats */}
+          <div className="absolute bottom-0 left-0 right-0 p-3">
+            <div className="flex items-center justify-between">
+              <span className="rounded-full border border-white/10 bg-black/40 px-2 py-1 text-[11px] text-white/70">
+                {item.kind.toUpperCase()}
+              </span>
+              <span className="text-[11px] text-white/60">{item.age}</span>
+            </div>
+
+            <div className="mt-2">
+              <div className="text-sm font-semibold tracking-tight">
+                {item.title ?? "Untitled"}
+              </div>
+              <p className="mt-1 line-clamp-3 text-xs leading-relaxed text-white/70">
+                {item.prompt}
+              </p>
+            </div>
+
+            <div className="mt-3 flex items-center justify-between">
+              <div className="flex items-center gap-3 text-xs text-white/70">
+                <span className="flex items-center gap-1">
+                  <Dot /> {formatCompact(item.likes)} likes
+                </span>
+                <span className="flex items-center gap-1">
+                  <Dot /> {formatCompact(item.views)} views
+                </span>
+              </div>
+
+              <button className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs text-white/80 hover:bg-white/10">
+                Remix
+              </button>
+            </div>
+          </div>
+
+          {/* Right-side actions (Sora-ish vibe) */}
+          <div className="absolute right-3 top-1/2 -translate-y-1/2 space-y-2 opacity-90">
+            <ActionPill label="♥" />
+            <ActionPill label="⤴" />
+            <ActionPill label="⋯" />
+          </div>
+        </div>
+      </div>
+    </article>
   );
 }
 
-function Row({ label, value }: { label: string; value: string }) {
+function ActionPill({ label }: { label: string }) {
   return (
-    <div className="flex items-center justify-between rounded-xl border border-white/10 bg-black/40 px-3 py-2">
-      <span className="text-white/60">{label}</span>
-      <span className="font-semibold text-white/90">{value}</span>
+    <div className="grid h-9 w-9 place-items-center rounded-full border border-white/10 bg-black/40 text-sm text-white/80">
+      {label}
     </div>
   );
+}
+
+function Dot() {
+  return <span className="inline-block h-1 w-1 rounded-full bg-white/40" />;
+}
+
+function formatCompact(n: number) {
+  if (n >= 1_000_000) return `${Math.round((n / 1_000_000) * 10) / 10}M`;
+  if (n >= 1_000) return `${Math.round((n / 1_000) * 10) / 10}K`;
+  return `${n}`;
 }

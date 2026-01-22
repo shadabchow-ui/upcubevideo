@@ -6,9 +6,9 @@ export async function POST(req: Request) {
   try {
     const { prompt } = await req.json();
 
-    if (!prompt) {
+    if (!prompt || typeof prompt !== 'string') {
       return new Response(
-        JSON.stringify({ error: 'Prompt required' }),
+        JSON.stringify({ error: 'Prompt is required' }),
         { status: 400 }
       );
     }
@@ -17,11 +17,15 @@ export async function POST(req: Request) {
       auth: process.env.REPLICATE_API_TOKEN!,
     });
 
+    // 🔒 Locked to best text→video model (no image required)
     const output = await replicate.run(
-      'sunfjun/stable-video-diffusion:d68b6e09eedbac7a49e3d8644999d93579c386a083768235cabca88796d70d82',
+      'genmoai/mochi-1',
       {
         input: {
           prompt,
+          num_frames: 121,
+          fps: 24,
+          guidance_scale: 5.5,
         },
       }
     );
@@ -31,6 +35,8 @@ export async function POST(req: Request) {
       { status: 200 }
     );
   } catch (err: any) {
+    console.error(err);
+
     return new Response(
       JSON.stringify({
         error: err?.message || 'Video generation failed',
@@ -39,6 +45,7 @@ export async function POST(req: Request) {
     );
   }
 }
+
 
 
 

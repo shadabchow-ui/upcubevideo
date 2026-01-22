@@ -1,19 +1,17 @@
 export const runtime = "edge";
 
-const MOCHI_VERSION =
-  "1944af04d098ef69bed7f9d335d102e652203f268ec4aaa2d836f6217217e460";
+const SVD_VERSION =
+  "d68b6e09eedbac7a49e3d8644999d93579c386a083768235cabca88796d70d82";
+
+// Temporary default image (we can upgrade later)
+const DEFAULT_IMAGE =
+  "https://replicate.delivery/pbxt/KcAKZ1wW2WJmjM0Xov9I0VCvjNwCmau64PkNnJUVVWk67Q6d/2261702010499_.pic.jpg";
 
 export async function POST(req: Request) {
   try {
     const { prompt } = await req.json();
 
-    if (!prompt) {
-      return new Response(
-        JSON.stringify({ error: "Prompt required" }),
-        { status: 400 }
-      );
-    }
-
+    // prompt optional for now
     const res = await fetch("https://api.replicate.com/v1/predictions", {
       method: "POST",
       headers: {
@@ -21,13 +19,9 @@ export async function POST(req: Request) {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        version: MOCHI_VERSION,
+        version: SVD_VERSION,
         input: {
-          prompt,
-          fps: 24,
-          num_frames: 121,
-          guidance_scale: 5.5,
-          num_inference_steps: 30,
+          input_image: DEFAULT_IMAGE,
         },
       }),
     });
@@ -47,9 +41,7 @@ export async function POST(req: Request) {
     return new Response(
       JSON.stringify({ error: err?.message || "Internal Server Error" }),
       { status: 500 }
-    );
-  }
-}
+
 
 
 

@@ -1,6 +1,6 @@
 export const runtime = "edge";
 
-const MOCHI_VERSION =
+const VIDEO_VERSION =
   "3f0457a3f0b5f9a56dbbbcd9f8e3e0f65f6c6b92b9f6a7cdbfe7b6f4c90c5d3";
 
 export async function POST(req: Request) {
@@ -21,24 +21,23 @@ export async function POST(req: Request) {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        version: MOCHI_VERSION,
+        version: VIDEO_VERSION,
         input: {
           prompt,
           num_frames: 24,
           fps: 8,
-          guidance_scale: 7.5,
         },
       }),
     });
 
-    const text = await res.text();
+    const json = await res.json();
 
     if (!res.ok) {
-      console.error("Replicate error:", text);
-      return new Response(text, { status: 500 });
+      console.error("Replicate error:", json);
+      return new Response(JSON.stringify(json), { status: 500 });
     }
 
-    return new Response(text, {
+    return new Response(JSON.stringify(json), {
       headers: { "Content-Type": "application/json" },
     });
   } catch (err) {
@@ -49,6 +48,7 @@ export async function POST(req: Request) {
     );
   }
 }
+
 
 
 

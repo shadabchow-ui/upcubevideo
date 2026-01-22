@@ -1,18 +1,23 @@
-import Replicate from "replicate";
+export const runtime = 'edge';
 
-const replicate = new Replicate({
-  auth: process.env.REPLICATE_API_TOKEN!,
-});
+import Replicate from 'replicate';
 
 export async function POST(req: Request) {
   const { prompt } = await req.json();
 
   if (!prompt) {
-    return Response.json({ error: "Prompt required" }, { status: 400 });
+    return Response.json(
+      { error: 'Prompt required' },
+      { status: 400 }
+    );
   }
 
+  const replicate = new Replicate({
+    auth: process.env.REPLICATE_API_TOKEN!,
+  });
+
   const output = await replicate.run(
-    "genmoai/mochi-1",
+    'genmoai/mochi-1',
     {
       input: {
         prompt,

@@ -1,93 +1,113 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 export default function PromptComposer() {
   const [prompt, setPrompt] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [quality, setQuality] = useState<'fast' | 'cinematic'>('fast');
+  const [jobId, setJobId] = useState<string | null>(null);
+  const [status, setStatus] = useState<string | null>(null);
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  async function handleGenerate() {
-    if (!prompt.trim()) return;
-
-    setLoading(true);
+  async function generate() {
     setError(null);
     setVideoUrl(null);
+    setStatus('starting');
 
-    try {
-      const res = await fetch('/api/video', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt }),
-      });
+    const res = await fetch('/api/video/create', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt, quality }),
+    });
 
-      if (!res.ok) {
-        const msg = await res.text();
-        throw new Error(msg || 'Generation failed');
-      }
+    const data = await res.json();
 
-      const data = await res.json();
-
-      /**
-       * Expected API response shape:
-       * { video: "https://replicate.delivery/.../output.mp4" }
-       */
-      if (!data.video) {
-        throw new Error('No video returned from API');
-      }
-
-      setVideoUrl(data.video);
-    } catch (err: any) {
-      setError(err.message || 'Something went wrong');
-    } finally {
-      setLoading(false);
+    if (!res.ok) {
+      setError(data.error);
+      return;
     }
+
+    setJobId(data.id);
+    setStatus(data.status);
   }
 
+  // Polling
+  useEffect(() => {
+    if (!jobId) return;
+
+    const interval = setInterval(async () => {
+      const res = await fetch(`/api/video/status?id=${jobId}`);
+      const data = await res.json();
+
+      setStatus(data.status);
+
+      if (data.status === 'succeeded') {
+        setVideoUrl(data.output);
+        clearInterval(interval);
+      }
+
+      if (data.status === 'failed') {
+        setError(data.error || 'Generation failed');
+        clearInterval(interval);
+      }
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, [jobId]);
+
   return (
-    <>
-      {/* Video Preview */}
-      {videoUrl && (
-        <div className="fixed inset-0 z-30 flex items-center justify-center bg-black/80">
-          <video
-            src={videoUrl}
-            controls
-            autoPlay
-            loop
-            className="max-h-[80vh] max-w-[90vw] rounded-xl border border-white/10"
-          />
-        </div>
-      )}
+    <div className="w-full max-w-xl mx-auto space-y-4">
+      <textarea
+        className="w-full p-3 rounded bg-black/60 border border-white/10"
+        placeholder="Describe your video..."
+        value={prompt}
+        onChange={(e) => setPrompt(e.target.value)}
+      />
 
-      {/* Prompt Bar */}
-      <div className="fixed bottom-6 left-1/2 z-40 w-[720px] max-w-[90vw] -translate-x-1/2">
-        <div className="flex items-center gap-3 rounded-2xl bg-black/70 backdrop-blur border border-white/10 px-4 py-3">
-          <input
-            value={prompt}
-            onChange={(e) => setPrompt(e.target.value)}
-            placeholder="Describe the video you want to create…"
-            className="flex-1 bg-transparent text-sm text-white placeholder:text-white/40 focus:outline-none"
-            disabled={loading}
-          />
-
-          <button
-            onClick={handleGenerate}
-            disabled={loading}
-            className="rounded-xl bg-white px-4 py-2 text-sm font-semibold text-black hover:bg-white/90 disabled:opacity-50"
-          >
-            {loading ? 'Generating…' : 'Generate'}
-          </button>
-        </div>
-
-        {error && (
-          <div className="mt-2 text-xs text-red-400 text-center">
-            {error}
-          </div>
-        )}
+      <div className="flex gap-2">
+        <button
+          onClick={() => setQuality('fast')}
+          className={`px-3 py-1 rounded ${
+            quality === 'fast' ? 'bg-white text-black' : 'bg-white/10'
+          }`}
+        >
+          Fast
+        </button>
+        <button
+          onClick={() => setQuality('cinematic')}
+          className={`px-3 py-1 rounded ${
+            quality === 'cinematic'
+              ? 'bg-white text-black'
+              : 'bg-white/10'
+          }`}
+        >
+          Cinematic
+        </button>
       </div>
-    </>
+
+      <button
+        onClick={generate}
+        className="px-6 py-2 rounded bg-white text-black"
+      >
+        Generate
+      </button>
+
+      {status && <p className="text-sm opacity-70">Status: {status}</p>}
+      {error && <p className="text-red-500">{error}</p>}
+
+      {videoUrl && (
+        <video
+          src={videoUrl}
+          controls
+          autoPlay
+          loop
+          className="w-full rounded-lg"
+        />
+      )}
+    </div>
   );
 }
+
 
 

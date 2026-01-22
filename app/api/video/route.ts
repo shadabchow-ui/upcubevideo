@@ -1,5 +1,8 @@
 export const runtime = "edge";
 
+const MOCHI_VERSION =
+  "3f0457a3f0b5f9a56dbbbcd9f8e3e0f65f6c6b92b9f6a7cdbfe7b6f4c90c5d3";
+
 export async function POST(req: Request) {
   try {
     const { prompt } = await req.json();
@@ -18,7 +21,7 @@ export async function POST(req: Request) {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "genmoai/mochi-1",
+        version: MOCHI_VERSION,
         input: {
           prompt,
           num_frames: 24,
@@ -32,10 +35,7 @@ export async function POST(req: Request) {
 
     if (!res.ok) {
       console.error("Replicate error:", text);
-      return new Response(
-        JSON.stringify({ error: text }),
-        { status: 500 }
-      );
+      return new Response(text, { status: 500 });
     }
 
     return new Response(text, {
@@ -49,6 +49,7 @@ export async function POST(req: Request) {
     );
   }
 }
+
 
 
 

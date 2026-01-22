@@ -6,9 +6,9 @@ export async function POST(req: Request) {
   try {
     const { prompt } = await req.json();
 
-    if (!prompt || typeof prompt !== 'string') {
+    if (!prompt) {
       return new Response(
-        JSON.stringify({ error: 'Prompt is required' }),
+        JSON.stringify({ error: 'Prompt required' }),
         { status: 400 }
       );
     }
@@ -17,9 +17,8 @@ export async function POST(req: Request) {
       auth: process.env.REPLICATE_API_TOKEN!,
     });
 
-    // 🔒 Locked to best text→video model (no image required)
     const output = await replicate.run(
-      'genmoai/mochi-1',
+      "genmoai/mochi-1:1944af04d098ef69bed7f9d335d102e652203f268ec4aaa2d836f6217217e460",
       {
         input: {
           prompt,
@@ -36,15 +35,13 @@ export async function POST(req: Request) {
     );
   } catch (err: any) {
     console.error(err);
-
     return new Response(
-      JSON.stringify({
-        error: err?.message || 'Video generation failed',
-      }),
+      JSON.stringify({ error: err.message }),
       { status: 500 }
     );
   }
 }
+
 
 
 

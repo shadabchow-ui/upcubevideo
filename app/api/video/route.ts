@@ -1,15 +1,13 @@
-export const runtime = 'edge';
-
-import Replicate from 'replicate';
 export const runtime = "edge";
 
+import Replicate from "replicate";
 
 export async function POST(req: Request) {
   const { prompt } = await req.json();
 
   if (!prompt) {
     return Response.json(
-      { error: 'Prompt required' },
+      { error: "Prompt required" },
       { status: 400 }
     );
   }
@@ -19,7 +17,7 @@ export async function POST(req: Request) {
   });
 
   const output = await replicate.run(
-    'genmoai/mochi-1',
+    "genmoai/mochi-1",
     {
       input: {
         prompt,
@@ -32,3 +30,4 @@ export async function POST(req: Request) {
 
   return Response.json({ video: output });
 }
+

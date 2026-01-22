@@ -1,7 +1,7 @@
 export const runtime = "edge";
 
-const VIDEO_VERSION =
-  "3f0457a3f0b5f9a56dbbbcd9f8e3e0f65f6c6b92b9f6a7cdbfe7b6f4c90c5d3";
+const MOCHI_VERSION =
+  "1944af04d098ef69bed7f9d335d102e652203f268ec4aaa2d836f6217217e460";
 
 export async function POST(req: Request) {
   try {
@@ -21,33 +21,37 @@ export async function POST(req: Request) {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        version: VIDEO_VERSION,
+        version: MOCHI_VERSION,
         input: {
           prompt,
-          num_frames: 24,
-          fps: 8,
+          fps: 24,
+          num_frames: 121,
+          guidance_scale: 5.5,
+          num_inference_steps: 30,
         },
       }),
     });
 
-    const json = await res.json();
+    const data = await res.json();
 
     if (!res.ok) {
-      console.error("Replicate error:", json);
-      return new Response(JSON.stringify(json), { status: 500 });
+      console.error("Replicate error:", data);
+      return new Response(JSON.stringify(data), { status: 500 });
     }
 
-    return new Response(JSON.stringify(json), {
+    return new Response(JSON.stringify(data), {
       headers: { "Content-Type": "application/json" },
     });
-  } catch (err) {
-    console.error("API crash:", err);
+  } catch (err: any) {
+    console.error("Server error:", err);
     return new Response(
-      JSON.stringify({ error: "Internal Server Error" }),
+      JSON.stringify({ error: err?.message || "Internal Server Error" }),
       { status: 500 }
     );
   }
 }
+
+
 
 
 

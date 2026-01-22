@@ -1,7 +1,5 @@
 export const runtime = "edge";
 
-const REPLICATE_API_URL = "https://api.replicate.com/v1/predictions";
-
 export async function POST(req: Request) {
   try {
     const { prompt } = await req.json();
@@ -13,14 +11,14 @@ export async function POST(req: Request) {
       );
     }
 
-    const res = await fetch(REPLICATE_API_URL, {
+    const res = await fetch("https://api.replicate.com/v1/predictions", {
       method: "POST",
       headers: {
-        "Authorization": `Token ${process.env.REPLICATE_API_TOKEN}`,
+        Authorization: `Token ${process.env.REPLICATE_API_TOKEN}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        version: "genmoai/mochi-1",
+        model: "genmoai/mochi-1",
         input: {
           prompt,
           num_frames: 24,
@@ -30,21 +28,19 @@ export async function POST(req: Request) {
       }),
     });
 
+    const text = await res.text();
+
     if (!res.ok) {
-      const text = await res.text();
       console.error("Replicate error:", text);
       return new Response(
-        JSON.stringify({ error: "Replicate request failed" }),
+        JSON.stringify({ error: text }),
         { status: 500 }
       );
     }
 
-    const data = await res.json();
-
-    return new Response(
-      JSON.stringify(data),
-      { headers: { "Content-Type": "application/json" } }
-    );
+    return new Response(text, {
+      headers: { "Content-Type": "application/json" },
+    });
   } catch (err) {
     console.error("API crash:", err);
     return new Response(
@@ -53,5 +49,6 @@ export async function POST(req: Request) {
     );
   }
 }
+
 
 

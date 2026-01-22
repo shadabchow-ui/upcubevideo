@@ -1,6 +1,8 @@
 export const runtime = 'edge';
 
 import Replicate from 'replicate';
+export const runtime = "edge";
+
 
 export async function POST(req: Request) {
   const { prompt } = await req.json();
